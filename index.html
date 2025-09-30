@@ -1,5 +1,616 @@
 <!DOCTYPE html>
+<html lang="id">!DOCTYPE html>
 <html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KumpulCerdas - Aplikasi Pengumpulan Tugas Online</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .modal-backdrop {
+            background-color: rgba(0,0,0,0.5);
+        }
+        .countdown-ended {
+            color: #dc2626; /* red-600 */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- Kontainer Utama -->
+    <div class="container mx-auto p-4 md:p-8">
+
+        <!-- Header -->
+        <header class="bg-white rounded-xl shadow-md p-6 mb-8">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-blue-600">KumpulCerdas</h1>
+                    <p class="text-gray-500 mt-1">Solusi Pengumpulan Tugas Tanpa Kertas</p>
+                </div>
+                <div class="flex items-center space-x-4 mt-4 md:mt-0">
+                    <button id="guideBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg transition duration-300">
+                        Panduan Pengguna
+                    </button>
+                    <div class="bg-gray-100 p-1 rounded-lg flex space-x-1">
+                        <button id="teacherBtn" class="role-btn bg-blue-500 text-white py-2 px-4 rounded-md font-medium">Guru</button>
+                        <button id="studentBtn" class="role-btn bg-transparent text-gray-600 py-2 px-4 rounded-md font-medium">Siswa</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Konten Utama -->
+        <main>
+            <!-- Tampilan untuk Guru -->
+            <div id="teacher-view">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold">Dasbor Guru</h2>
+                    <button id="addStudentBtn" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300">
+                        Tambah Siswa
+                    </button>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <div id="teacher-assignment-info">
+                        <h3 id="teacher-assignment-title" class="text-xl font-semibold"></h3>
+                        <p id="teacher-assignment-deadline" class="text-sm text-gray-500 mt-1"></p>
+                    </div>
+                    <div class="border-b my-4"></div>
+                    <div id="teacher-assignment-list" class="space-y-4">
+                        <!-- Daftar Siswa -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tampilan untuk Siswa -->
+            <div id="student-view" class="hidden">
+                <h2 class="text-2xl font-bold mb-4">Dasbor Siswa</h2>
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <div class="mb-6 border-b pb-6">
+                        <h3 class="text-lg font-semibold mb-3">Profil Siswa</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label for="student-selector" class="block text-sm font-medium text-gray-700">Pilih Nama Anda</label>
+                                <select id="student-selector" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"></select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-500">Kelas</label>
+                                <p id="student-class-display" class="mt-1 text-lg font-semibold">-</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-500">No. Absen</label>
+                                <p id="student-absen-display" class="mt-1 text-lg font-semibold">-</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h3 class="text-xl font-semibold mb-4">Tugas Anda</h3>
+                    <div id="student-assignment-list" class="space-y-4">
+                        <!-- Daftar Tugas Siswa -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Panduan Pengguna -->
+    <div id="guideModal" class="fixed inset-0 z-50 items-center justify-center hidden">
+        <div class="modal-backdrop fixed inset-0"></div>
+        <div class="bg-white rounded-lg shadow-xl m-4 md:m-8 max-w-2xl w-full p-6 relative transform transition-all duration-300 scale-95 opacity-0" id="guideModalContent">
+            <h2 class="text-2xl font-bold mb-4">Panduan Penggunaan Aplikasi</h2>
+            <div class="border-b mb-4">
+                <nav class="flex space-x-4" id="guideTabs">
+                    <button data-target="guide-teacher" class="guide-tab-btn py-2 px-1 border-b-2 border-blue-500 text-blue-600 font-semibold">Untuk Guru</button>
+                    <button data-target="guide-student" class="guide-tab-btn py-2 px-1 border-b-2 border-transparent text-gray-500">Untuk Siswa</button>
+                </nav>
+            </div>
+            <div id="guide-content" class="text-gray-700 space-y-3">
+                <div id="guide-teacher" class="guide-tab-content">
+                    <h4 class="font-semibold mt-2">1. Menambah Siswa</h4>
+                    <p>Klik tombol "Tambah Siswa" di dasbor Anda untuk mendaftarkan siswa baru ke dalam sistem.</p>
+                    <h4 class="font-semibold mt-2">2. Melihat Tugas Siswa</h4>
+                    <p>Klik "Beri Nilai" untuk melihat tugas yang dikumpulkan, baik berupa file PDF maupun jawaban yang diketik langsung.</p>
+                    <h4 class="font-semibold mt-2">3. Memberi Penilaian</h4>
+                    <p>Setelah melihat pekerjaan siswa, masukkan nilai dan komentar pada form yang tersedia.</p>
+                </div>
+                <div id="guide-student" class="guide-tab-content hidden">
+                    <h4 class="font-semibold">1. Pilih Profil Anda</h4>
+                    <p>Gunakan menu dropdown di bagian atas untuk memilih nama Anda. Kelas dan nomor absen akan terisi secara otomatis.</p>
+                    <h4 class="font-semibold mt-2">2. Perhatikan Batas Waktu</h4>
+                    <p>Setiap tugas memiliki batas waktu. Pastikan mengumpulkan sebelum tenggat agar tidak terlambat.</p>
+                    <h4 class="font-semibold mt-2">3. Pilih Cara Pengerjaan</h4>
+                    <p>Anda memiliki dua opsi: <strong>"Kerjakan Online"</strong> atau <strong>"Unggah File"</strong>. Tombol akan nonaktif jika sudah melewati batas waktu.</p>
+                </div>
+            </div>
+            <button id="closeGuideModal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+        </div>
+    </div>
+    
+    <!-- Modal Penilaian (Guru) -->
+    <div id="gradingModal" class="fixed inset-0 z-50 items-center justify-center hidden">
+        <div class="modal-backdrop fixed inset-0"></div>
+        <div class="bg-white rounded-lg shadow-xl m-4 md:m-8 max-w-2xl w-full p-6 relative transform transition-all duration-300 scale-95 opacity-0" id="gradingModalContent">
+            <h2 class="text-2xl font-bold mb-4">Form Penilaian Tugas</h2>
+            <div id="grading-student-info" class="mb-4 bg-gray-100 p-3 rounded-md"></div>
+            
+            <div id="submission-content-area" class="mb-4">
+                 <div id="submitted-file-viewer" class="hidden">
+                    <p class="font-semibold">File Terkumpul: <a id="submitted-file-link" href="#" class="text-blue-600 hover:underline" download>tugas_siswa.pdf</a></p>
+                 </div>
+                 <div id="submitted-text-viewer" class="hidden">
+                    <p class="font-semibold mb-2">Jawaban Siswa:</p>
+                    <div id="submitted-text-content" class="bg-gray-50 p-3 border rounded-md max-h-48 overflow-y-auto"></div>
+                 </div>
+            </div>
+
+            <form id="grading-form">
+                <input type="hidden" id="submission-id">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="grade" class="block text-sm font-medium text-gray-700 mb-1">Nilai (0-100)</label>
+                        <input type="number" id="grade" name="grade" min="0" max="100" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
+                    </div>
+                    <div>
+                        <label for="comment" class="block text-sm font-medium text-gray-700 mb-1">Komentar / Umpan Balik</label>
+                        <textarea id="comment" name="comment" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Berikan umpan balik..."></textarea>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" id="cancelGrading" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg transition duration-300">Batal</button>
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-300">Simpan Penilaian</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Editor Tugas (Siswa) -->
+    <div id="taskEditorModal" class="fixed inset-0 z-50 items-center justify-center hidden">
+        <div class="modal-backdrop fixed inset-0"></div>
+        <div class="bg-white rounded-lg shadow-xl m-4 md:m-8 max-w-2xl w-full p-6 relative transform transition-all duration-300 scale-95 opacity-0" id="taskEditorModalContent">
+            <h2 class="text-2xl font-bold mb-4">Kerjakan Tugas Online</h2>
+            <form id="task-editor-form">
+                <input type="hidden" id="editor-submission-id">
+                <div>
+                    <label for="task-content-input" class="block text-sm font-medium text-gray-700 mb-1">Jawaban Anda:</label>
+                    <textarea id="task-content-input" name="task-content" rows="10" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Ketik jawaban tugas Anda di sini..."></textarea>
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" id="cancelTaskEditor" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg transition duration-300">Batal</button>
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-300">Kumpulkan Jawaban</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal Tambah Siswa -->
+    <div id="addStudentModal" class="fixed inset-0 z-50 items-center justify-center hidden">
+        <div class="modal-backdrop fixed inset-0"></div>
+        <div class="bg-white rounded-lg shadow-xl m-4 md:m-8 max-w-lg w-full p-6 relative transform transition-all duration-300 scale-95 opacity-0" id="addStudentModalContent">
+            <h2 class="text-2xl font-bold mb-4">Tambah Siswa Baru</h2>
+            <form id="add-student-form">
+                <div class="mb-4">
+                    <label for="new-student-name" class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
+                    <input type="text" id="new-student-name" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="new-student-class" class="block text-sm font-medium text-gray-700 mb-1">Kelas</label>
+                        <input type="text" id="new-student-class" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" value="10-A" required>
+                    </div>
+                    <div>
+                        <label for="new-student-absen" class="block text-sm font-medium text-gray-700 mb-1">No. Absen</label>
+                        <input type="number" id="new-student-absen" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" id="cancelAddStudent" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg transition duration-300">Batal</button>
+                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-300">Simpan Siswa</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    // --- DATABASE SIMULASI ---
+    const database = {
+        teachers: [{ id: 1, name: 'Ibu Retno, S.Pd.', subject: 'Biologi' }],
+        students: [
+            { id: 1, name: 'Budi Santoso', class: '10-A', absen: 5 },
+            { id: 2, name: 'Citra Lestari', class: '10-A', absen: 8 },
+            { id: 3, name: 'Doni Firmansyah', class: '10-A', absen: 12 },
+        ],
+        assignments: [{ 
+            id: 101, 
+            subject: 'Biologi', 
+            title: 'Laporan Praktikum Sel Hewan', 
+            description: 'Buat laporan lengkap berdasarkan hasil praktikum. Sertakan gambar dan pembahasan.',
+            deadline: '2025-10-02T23:59:00' // BATAS WAKTU TUGAS
+        }],
+        submissions: [
+            { id: 1001, studentId: 1, assignmentId: 101, status: 'Terkumpul', submissionType: 'text', file: null, textContent: 'Sel hewan adalah sel eukariotik yang menyusun jaringan hewan. Berbeda dari sel tumbuhan, sel hewan tidak memiliki dinding sel dan kloroplas.', grade: null, comment: '' },
+            { id: 1002, studentId: 2, assignmentId: 101, status: 'Sudah Dinilai', submissionType: 'file', file: 'laporan_citra.pdf', textContent: null, grade: 95, comment: 'Kerja bagus, Citra! Pembahasan sangat mendalam dan terstruktur dengan baik.' },
+            { id: 1003, studentId: 3, assignmentId: 101, status: 'Belum Mengumpulkan', submissionType: null, file: null, textContent: null, grade: null, comment: '' },
+        ]
+    };
+
+    // --- STATE APLIKASI ---
+    let currentUserRole = 'teacher';
+    let currentStudent = database.students[0];
+    let countdownInterval;
+
+    // --- REFERENSI ELEMEN DOM ---
+    const teacherView = document.getElementById('teacher-view');
+    const studentView = document.getElementById('student-view');
+    const teacherBtn = document.getElementById('teacherBtn');
+    const studentBtn = document.getElementById('studentBtn');
+    const teacherAssignmentList = document.getElementById('teacher-assignment-list');
+    const studentAssignmentList = document.getElementById('student-assignment-list');
+    const teacherAssignmentTitle = document.getElementById('teacher-assignment-title');
+    const teacherAssignmentDeadline = document.getElementById('teacher-assignment-deadline');
+    const studentSelector = document.getElementById('student-selector');
+    const studentClassDisplay = document.getElementById('student-class-display');
+    const studentAbsenDisplay = document.getElementById('student-absen-display');
+    const guideModal = document.getElementById('guideModal');
+    const guideModalContent = document.getElementById('guideModalContent');
+    const guideBtn = document.getElementById('guideBtn');
+    const closeGuideModalBtn = document.getElementById('closeGuideModal');
+    const guideTabs = document.getElementById('guideTabs');
+    const gradingModal = document.getElementById('gradingModal');
+    const gradingModalContent = document.getElementById('gradingModalContent');
+    const gradingForm = document.getElementById('grading-form');
+    const cancelGradingBtn = document.getElementById('cancelGrading');
+    const submissionIdInput = document.getElementById('submission-id');
+    const gradeInput = document.getElementById('grade');
+    const commentInput = document.getElementById('comment');
+    const submittedFileViewer = document.getElementById('submitted-file-viewer');
+    const submittedTextViewer = document.getElementById('submitted-text-viewer');
+    const submittedTextContent = document.getElementById('submitted-text-content');
+    const taskEditorModal = document.getElementById('taskEditorModal');
+    const taskEditorModalContent = document.getElementById('taskEditorModalContent');
+    const taskEditorForm = document.getElementById('task-editor-form');
+    const cancelTaskEditorBtn = document.getElementById('cancelTaskEditor');
+    const editorSubmissionIdInput = document.getElementById('editor-submission-id');
+    const taskContentInput = document.getElementById('task-content-input');
+    const addStudentBtn = document.getElementById('addStudentBtn');
+    const addStudentModal = document.getElementById('addStudentModal');
+    const addStudentModalContent = document.getElementById('addStudentModalContent');
+    const addStudentForm = document.getElementById('add-student-form');
+    const cancelAddStudentBtn = document.getElementById('cancelAddStudent');
+
+    // --- FUNGSI RENDER ---
+    function getStatusBadge(status) {
+        switch (status) {
+            case 'Terkumpul': return `<span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-1 rounded-full">Terkumpul</span>`;
+            case 'Sudah Dinilai': return `<span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-1 rounded-full">Sudah Dinilai</span>`;
+            case 'Belum Mengumpulkan': return `<span class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-1 rounded-full">Belum Mengumpulkan</span>`;
+            default: return '';
+        }
+    }
+    
+    function formatDeadline(deadlineString) {
+        return new Date(deadlineString).toLocaleString('id-ID', {
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+    }
+
+    function renderTeacherView() {
+        const assignment = database.assignments[0];
+        const teacher = database.teachers[0];
+        teacherAssignmentTitle.innerHTML = `Tugas Aktif: ${assignment.title} <span class="text-base font-normal text-gray-500">(Guru: ${teacher.name})</span>`;
+        teacherAssignmentDeadline.innerHTML = `<strong>Batas Waktu:</strong> ${formatDeadline(assignment.deadline)}`;
+
+        teacherAssignmentList.innerHTML = '';
+        database.students.sort((a, b) => a.absen - b.absen).forEach(student => {
+            const submission = database.submissions.find(s => s.studentId === student.id);
+            let actionButton = '';
+            if (submission.status === 'Terkumpul') {
+                actionButton = `<button data-submission-id="${submission.id}" class="grade-btn bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300">Beri Nilai</button>`;
+            } else if (submission.status === 'Sudah Dinilai') {
+                actionButton = `<div class="text-right"><p class="font-bold text-lg">${submission.grade}</p><p class="text-xs text-gray-500">Sudah dinilai</p></div>`;
+            }
+            teacherAssignmentList.innerHTML += `
+                <div class="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition">
+                    <div class="flex items-center"><div class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-600 mr-4">${student.name.charAt(0)}</div><div><p class="font-semibold">${student.name}</p><p class="text-sm text-gray-500">Kelas: ${student.class} | No. Absen: ${student.absen}</p></div></div>
+                    <div class="flex items-center space-x-4">${getStatusBadge(submission.status)}<div class="w-32 text-right">${actionButton}</div></div>
+                </div>`;
+        });
+        document.querySelectorAll('.grade-btn').forEach(btn => btn.addEventListener('click', () => openGradingModal(btn.dataset.submissionId)));
+    }
+
+    function renderStudentSelector() {
+        studentSelector.innerHTML = '';
+        database.students.sort((a, b) => a.name.localeCompare(b.name)).forEach(student => {
+            const option = document.createElement('option');
+            option.value = student.id;
+            option.textContent = student.name;
+            if(student.id === currentStudent.id) {
+                option.selected = true;
+            }
+            studentSelector.appendChild(option);
+        });
+    }
+
+    function startCountdown(deadline) {
+        clearInterval(countdownInterval); // Hentikan interval sebelumnya
+        const countdownElement = document.getElementById('countdown-timer');
+        if (!countdownElement) return;
+
+        const updateCountdown = () => {
+            const now = new Date().getTime();
+            const distance = new Date(deadline).getTime() - now;
+
+            if (distance < 0) {
+                countdownElement.innerHTML = "Batas waktu telah berakhir.";
+                countdownElement.classList.add('countdown-ended');
+                clearInterval(countdownInterval);
+                // Nonaktifkan tombol
+                document.querySelectorAll('.open-task-editor-btn, .file-upload-label').forEach(el => {
+                    el.classList.add('opacity-50', 'cursor-not-allowed');
+                    el.style.pointerEvents = 'none'; // Cegah klik
+                });
+                return;
+            }
+
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            countdownElement.innerHTML = `Sisa Waktu: <strong>${days}h ${hours}j ${minutes}m ${seconds}d</strong>`;
+        };
+
+        updateCountdown();
+        countdownInterval = setInterval(updateCountdown, 1000);
+    }
+
+
+    function renderStudentView() {
+        studentClassDisplay.textContent = currentStudent.class;
+        studentAbsenDisplay.textContent = currentStudent.absen;
+
+        studentAssignmentList.innerHTML = '';
+        const assignment = database.assignments[0];
+        const submission = database.submissions.find(s => s.studentId === currentStudent.id && s.assignmentId === assignment.id);
+        
+        let submissionDetails = '';
+        const isOverdue = new Date() > new Date(assignment.deadline);
+
+        if (submission) {
+            if (submission.status === 'Belum Mengumpulkan') {
+                const disabledClasses = isOverdue ? 'opacity-50 cursor-not-allowed' : '';
+                const disabledPointer = isOverdue ? 'pointer-events: none;' : '';
+
+                submissionDetails = `<p class="text-gray-500 mb-2">Anda belum mengumpulkan tugas ini.</p>
+                    <div class="mt-4 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                        <button class="open-task-editor-btn bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300 ${disabledClasses}" style="${disabledPointer}" data-submission-id="${submission.id}">Kerjakan Online</button>
+                        <label class="file-upload-label cursor-pointer bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300 inline-block text-center ${disabledClasses}" style="${disabledPointer}">
+                            Unggah File (PDF)
+                            <input type="file" class="hidden file-upload" accept=".pdf" data-submission-id="${submission.id}" ${isOverdue ? 'disabled' : ''}>
+                        </label>
+                    </div>`;
+            } else {
+                 let contentPreview = '';
+                if (submission.submissionType === 'file') {
+                    contentPreview = `<p class="text-gray-700">File: <strong>${submission.file}</strong></p>`;
+                } else {
+                    contentPreview = `<p class="font-semibold text-gray-800">Jawaban Anda:</p><p class="text-gray-700 italic bg-gray-50 p-2 rounded-md">"${submission.textContent.substring(0, 100)}..."</p>`;
+                }
+
+                if (submission.status === 'Terkumpul') {
+                    submissionDetails = `<div class="bg-yellow-50 border border-yellow-200 p-4 rounded-md">
+                        <h4 class="font-semibold text-yellow-800">Tugas Terkumpul</h4>
+                        <div class="mt-2">${contentPreview}</div>
+                        <p class="text-yellow-700 mt-2">Menunggu penilaian dari guru.</p>
+                    </div>`;
+                } else if (submission.status === 'Sudah Dinilai') {
+                    submissionDetails = `<div class="bg-green-50 border border-green-200 p-4 rounded-md">
+                        <h4 class="font-semibold text-green-800">Tugas Sudah Dinilai</h4>
+                        <div class="mt-2">${contentPreview}</div>
+                        <p class="font-bold text-2xl mt-4 text-green-900">Nilai: ${submission.grade}</p>
+                        <div class="mt-4 pt-4 border-t border-green-200">
+                            <p class="font-semibold text-green-800">Komentar Guru:</p>
+                            <p class="text-green-700 italic">"${submission.comment}"</p>
+                        </div>
+                    </div>`;
+                }
+            }
+        }
+        
+        studentAssignmentList.innerHTML = `<div class="border rounded-lg p-4">
+            <h4 class="font-bold text-lg">${assignment.title}</h4>
+            <p class="text-gray-600 mt-1">${assignment.description}</p>
+            <div class="mt-4 bg-gray-50 p-3 rounded-md">
+                <p class="text-sm text-gray-600"><strong>Batas Waktu:</strong> ${formatDeadline(assignment.deadline)}</p>
+                <div id="countdown-timer" class="mt-1 text-sm font-semibold text-blue-600"></div>
+            </div>
+            <div class="mt-4 pt-4 border-t">${submissionDetails}</div>
+        </div>`;
+        
+        startCountdown(assignment.deadline);
+        document.querySelectorAll('.file-upload').forEach(el => el.addEventListener('change', handleFileUpload));
+        document.querySelectorAll('.open-task-editor-btn').forEach(el => el.addEventListener('click', () => openTaskEditor(el.dataset.submissionId)));
+    }
+    
+    // --- FUNGSI MODAL ---
+    function openModal(modal, content) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        setTimeout(() => content.classList.remove('scale-95', 'opacity-0'), 10);
+    }
+    function closeModal(modal, content) {
+        content.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 300);
+    }
+
+    function openGradingModal(submissionId) {
+        const submission = database.submissions.find(s => s.id == submissionId);
+        const student = database.students.find(st => st.id === submission.studentId);
+        document.getElementById('grading-student-info').innerHTML = `<p><strong>Siswa:</strong> ${student.name}</p><p><strong>Kelas:</strong> ${student.class} | <strong>No. Absen:</strong> ${student.absen}</p>`;
+        
+        if (submission.submissionType === 'file') {
+            submittedTextViewer.classList.add('hidden');
+            submittedFileViewer.classList.remove('hidden');
+            document.getElementById('submitted-file-link').textContent = submission.file;
+        } else {
+            submittedFileViewer.classList.add('hidden');
+            submittedTextViewer.classList.remove('hidden');
+            submittedTextContent.textContent = submission.textContent;
+        }
+
+        submissionIdInput.value = submission.id;
+        gradeInput.value = submission.grade || '';
+        commentInput.value = submission.comment || '';
+        openModal(gradingModal, gradingModalContent);
+    }
+
+    function openTaskEditor(submissionId) {
+        openModal(taskEditorModal, taskEditorModalContent);
+        const submission = database.submissions.find(s => s.id == submissionId);
+        editorSubmissionIdInput.value = submissionId;
+        taskContentInput.value = submission.textContent || '';
+    }
+
+    // --- EVENT HANDLERS ---
+    function switchRole(role) {
+        currentUserRole = role;
+        teacherView.classList.toggle('hidden', role !== 'teacher');
+        studentView.classList.toggle('hidden', role !== 'student');
+        teacherBtn.classList.toggle('bg-blue-500', role === 'teacher');
+        teacherBtn.classList.toggle('text-white', role === 'teacher');
+        teacherBtn.classList.toggle('bg-transparent', role !== 'teacher');
+        teacherBtn.classList.toggle('text-gray-600', role !== 'teacher');
+        studentBtn.classList.toggle('bg-blue-500', role === 'student');
+        studentBtn.classList.toggle('text-white', role === 'student');
+        studentBtn.classList.toggle('bg-transparent', role !== 'student');
+        studentBtn.classList.toggle('text-gray-600', role !== 'student');
+        if (role === 'teacher') {
+            clearInterval(countdownInterval);
+            renderTeacherView();
+        } else {
+            renderStudentView();
+        }
+    }
+
+    function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (file && file.type === 'application/pdf') {
+            const submissionId = event.target.dataset.submissionId;
+            const submission = database.submissions.find(s => s.id == submissionId);
+            submission.file = file.name;
+            submission.status = 'Terkumpul';
+            submission.submissionType = 'file';
+            submission.textContent = null;
+            renderStudentView();
+            alert(`File "${file.name}" berhasil diunggah!`);
+        } else {
+            alert('Gagal! Harap unggah file dalam format PDF.');
+        }
+    }
+
+    studentSelector.addEventListener('change', (e) => {
+        const selectedStudentId = parseInt(e.target.value);
+        currentStudent = database.students.find(s => s.id === selectedStudentId);
+        renderStudentView();
+    });
+
+    gradingForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const submission = database.submissions.find(s => s.id == submissionIdInput.value);
+        submission.grade = parseInt(gradeInput.value);
+        submission.comment = commentInput.value;
+        submission.status = 'Sudah Dinilai';
+        closeModal(gradingModal, gradingModalContent);
+        renderTeacherView();
+    });
+
+    taskEditorForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const submission = database.submissions.find(s => s.id == editorSubmissionIdInput.value);
+        submission.textContent = taskContentInput.value;
+        submission.status = 'Terkumpul';
+        submission.submissionType = 'text';
+        submission.file = null;
+        closeModal(taskEditorModal, taskEditorModalContent);
+        renderStudentView();
+    });
+    
+    addStudentForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const newName = document.getElementById('new-student-name').value;
+        const newClass = document.getElementById('new-student-class').value;
+        const newAbsen = parseInt(document.getElementById('new-student-absen').value);
+
+        if (newName && newClass && !isNaN(newAbsen)) {
+            const newStudentId = (database.students.length > 0 ? Math.max(...database.students.map(s => s.id)) : 0) + 1;
+            const newSubmissionId = (database.submissions.length > 0 ? Math.max(...database.submissions.map(s => s.id)) : 0) + 1;
+            const currentAssignmentId = database.assignments[0].id;
+
+            const newStudent = { id: newStudentId, name: newName, class: newClass, absen: newAbsen };
+            const newSubmission = { id: newSubmissionId, studentId: newStudentId, assignmentId: currentAssignmentId, status: 'Belum Mengumpulkan', submissionType: null, file: null, textContent: null, grade: null, comment: '' };
+
+            database.students.push(newStudent);
+            database.submissions.push(newSubmission);
+
+            addStudentForm.reset();
+            closeModal(addStudentModal, addStudentModalContent);
+
+            renderTeacherView();
+            renderStudentSelector();
+            
+            alert(`Siswa "${newName}" berhasil ditambahkan.`);
+        } else {
+            alert('Harap isi semua kolom dengan benar.');
+        }
+    });
+
+    teacherBtn.addEventListener('click', () => switchRole('teacher'));
+    studentBtn.addEventListener('click', () => switchRole('student'));
+    guideBtn.addEventListener('click', () => openModal(guideModal, guideModalContent));
+    closeGuideModalBtn.addEventListener('click', () => closeModal(guideModal, guideModalContent));
+    cancelGradingBtn.addEventListener('click', () => closeModal(gradingModal, gradingModalContent));
+    cancelTaskEditorBtn.addEventListener('click', () => closeModal(taskEditorModal, taskEditorModalContent));
+    addStudentBtn.addEventListener('click', () => openModal(addStudentModal, addStudentModalContent));
+    cancelAddStudentBtn.addEventListener('click', () => closeModal(addStudentModal, addStudentModalContent));
+
+    [guideModal, gradingModal, taskEditorModal, addStudentModal].forEach(modal => {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal(modal, modal.querySelector('div[id$="Content"]'));
+        });
+    });
+
+    guideTabs.addEventListener('click', (e) => {
+        if (e.target.classList.contains('guide-tab-btn')) {
+            document.querySelectorAll('.guide-tab-btn').forEach(btn => {
+                btn.classList.remove('border-blue-500', 'text-blue-600', 'font-semibold');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            });
+            e.target.classList.add('border-blue-500', 'text-blue-600', 'font-semibold');
+            e.target.classList.remove('border-transparent', 'text-gray-500');
+
+            document.querySelectorAll('.guide-tab-content').forEach(c => c.classList.add('hidden'));
+            document.getElementById(e.target.dataset.target).classList.remove('hidden');
+        }
+    });
+    
+    // --- INISIALISASI ---
+    renderStudentSelector();
+    switchRole(currentUserRole);
+
+});
+</script>
+
+</body>
+</html>
+
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
