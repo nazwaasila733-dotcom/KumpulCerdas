@@ -45,7 +45,12 @@
         <main>
             <!-- Tampilan untuk Guru -->
             <div id="teacher-view">
-                <h2 class="text-2xl font-bold mb-4">Dasbor Guru</h2>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold">Dasbor Guru</h2>
+                    <button id="addStudentBtn" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300">
+                        Tambah Siswa
+                    </button>
+                </div>
                 <div class="bg-white p-6 rounded-xl shadow-md">
                     <h3 id="teacher-assignment-title" class="text-xl font-semibold border-b pb-3 mb-4"></h3>
                     <div id="teacher-assignment-list" class="space-y-4">
@@ -99,9 +104,11 @@
             </div>
             <div id="guide-content" class="text-gray-700 space-y-3">
                 <div id="guide-teacher" class="guide-tab-content">
-                    <h4 class="font-semibold mt-2">1. Melihat Tugas Siswa</h4>
+                    <h4 class="font-semibold mt-2">1. Menambah Siswa</h4>
+                    <p>Klik tombol "Tambah Siswa" di dasbor Anda untuk mendaftarkan siswa baru ke dalam sistem.</p>
+                    <h4 class="font-semibold mt-2">2. Melihat Tugas Siswa</h4>
                     <p>Klik "Beri Nilai" untuk melihat tugas yang dikumpulkan, baik berupa file PDF maupun jawaban yang diketik langsung.</p>
-                    <h4 class="font-semibold mt-2">2. Memberi Penilaian</h4>
+                    <h4 class="font-semibold mt-2">3. Memberi Penilaian</h4>
                     <p>Setelah melihat pekerjaan siswa, masukkan nilai dan komentar pada form yang tersedia.</p>
                 </div>
                 <div id="guide-student" class="guide-tab-content hidden">
@@ -172,6 +179,34 @@
             </form>
         </div>
     </div>
+    
+    <!-- Modal Tambah Siswa -->
+    <div id="addStudentModal" class="fixed inset-0 z-50 items-center justify-center hidden">
+        <div class="modal-backdrop fixed inset-0"></div>
+        <div class="bg-white rounded-lg shadow-xl m-4 md:m-8 max-w-lg w-full p-6 relative transform transition-all duration-300 scale-95 opacity-0" id="addStudentModalContent">
+            <h2 class="text-2xl font-bold mb-4">Tambah Siswa Baru</h2>
+            <form id="add-student-form">
+                <div class="mb-4">
+                    <label for="new-student-name" class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
+                    <input type="text" id="new-student-name" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="new-student-class" class="block text-sm font-medium text-gray-700 mb-1">Kelas</label>
+                        <input type="text" id="new-student-class" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" value="10-A" required>
+                    </div>
+                    <div>
+                        <label for="new-student-absen" class="block text-sm font-medium text-gray-700 mb-1">No. Absen</label>
+                        <input type="number" id="new-student-absen" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" required>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" id="cancelAddStudent" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg transition duration-300">Batal</button>
+                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-300">Simpan Siswa</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
 
 <script>
@@ -229,6 +264,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const cancelTaskEditorBtn = document.getElementById('cancelTaskEditor');
     const editorSubmissionIdInput = document.getElementById('editor-submission-id');
     const taskContentInput = document.getElementById('task-content-input');
+    const addStudentBtn = document.getElementById('addStudentBtn');
+    const addStudentModal = document.getElementById('addStudentModal');
+    const addStudentModalContent = document.getElementById('addStudentModalContent');
+    const addStudentForm = document.getElementById('add-student-form');
+    const cancelAddStudentBtn = document.getElementById('cancelAddStudent');
 
     // --- FUNGSI RENDER ---
     function getStatusBadge(status) {
@@ -245,8 +285,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const teacher = database.teachers[0];
         teacherAssignmentTitle.innerHTML = `Tugas Aktif: ${assignment.title} <span class="text-base font-normal text-gray-500">(Guru: ${teacher.name})</span>`;
         teacherAssignmentList.innerHTML = '';
-        database.submissions.forEach(submission => {
-            const student = database.students.find(s => s.id === submission.studentId);
+        database.students.sort((a, b) => a.absen - b.absen).forEach(student => {
+            const submission = database.submissions.find(s => s.studentId === student.id);
             let actionButton = '';
             if (submission.status === 'Terkumpul') {
                 actionButton = `<button data-submission-id="${submission.id}" class="grade-btn bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300">Beri Nilai</button>`;
@@ -264,7 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderStudentSelector() {
         studentSelector.innerHTML = '';
-        database.students.forEach(student => {
+        database.students.sort((a, b) => a.name.localeCompare(b.name)).forEach(student => {
             const option = document.createElement('option');
             option.value = student.id;
             option.textContent = student.name;
@@ -427,6 +467,35 @@ document.addEventListener('DOMContentLoaded', () => {
         closeModal(taskEditorModal, taskEditorModalContent);
         renderStudentView();
     });
+    
+    addStudentForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const newName = document.getElementById('new-student-name').value;
+        const newClass = document.getElementById('new-student-class').value;
+        const newAbsen = parseInt(document.getElementById('new-student-absen').value);
+
+        if (newName && newClass && !isNaN(newAbsen)) {
+            const newStudentId = Math.max(...database.students.map(s => s.id)) + 1;
+            const newSubmissionId = Math.max(...database.submissions.map(s => s.id)) + 1;
+            const currentAssignmentId = database.assignments[0].id;
+
+            const newStudent = { id: newStudentId, name: newName, class: newClass, absen: newAbsen };
+            const newSubmission = { id: newSubmissionId, studentId: newStudentId, assignmentId: currentAssignmentId, status: 'Belum Mengumpulkan', submissionType: null, file: null, textContent: null, grade: null, comment: '' };
+
+            database.students.push(newStudent);
+            database.submissions.push(newSubmission);
+
+            addStudentForm.reset();
+            closeModal(addStudentModal, addStudentModalContent);
+
+            renderTeacherView();
+            renderStudentSelector();
+            
+            alert(`Siswa "${newName}" berhasil ditambahkan.`);
+        } else {
+            alert('Harap isi semua kolom dengan benar.');
+        }
+    });
 
     teacherBtn.addEventListener('click', () => switchRole('teacher'));
     studentBtn.addEventListener('click', () => switchRole('student'));
@@ -434,11 +503,15 @@ document.addEventListener('DOMContentLoaded', () => {
     closeGuideModalBtn.addEventListener('click', () => closeModal(guideModal, guideModalContent));
     cancelGradingBtn.addEventListener('click', () => closeModal(gradingModal, gradingModalContent));
     cancelTaskEditorBtn.addEventListener('click', () => closeModal(taskEditorModal, taskEditorModalContent));
-    [guideModal, gradingModal, taskEditorModal].forEach(modal => {
+    addStudentBtn.addEventListener('click', () => openModal(addStudentModal, addStudentModalContent));
+    cancelAddStudentBtn.addEventListener('click', () => closeModal(addStudentModal, addStudentModalContent));
+
+    [guideModal, gradingModal, taskEditorModal, addStudentModal].forEach(modal => {
         modal.addEventListener('click', (e) => {
             if (e.target === modal) closeModal(modal, modal.querySelector('div[id$="Content"]'));
         });
     });
+
     guideTabs.addEventListener('click', (e) => {
         if (e.target.classList.contains('guide-tab-btn')) {
             document.querySelectorAll('.guide-tab-btn').forEach(btn => {
